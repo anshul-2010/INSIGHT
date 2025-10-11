@@ -1,2 +1,2 @@
 # INSIGHT
-Interpretable Neural Semantic and Image-based Generative-Forensic Hallucination Tracing
+Integrated Neural Semantics for Interpretable Generative-forensic Hallucination Tracing
