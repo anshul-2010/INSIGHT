@@ -1,0 +1,10 @@
+# Minimal requirements for running analysis scripts
+numpy
+torch
+torchvision
+scikit-learn
+tabulate
+# Optional (CLIP/LLMs):
+clip
+anthropic
+opencv-python
