@@ -65,7 +65,9 @@ class ForensicCLIPScorer:
             emb = self.model.encode_image(prep)[0]
         return F.normalize(emb, dim=0)
 
-    def _batch_similarity(self, patches: Sequence[PatchLike], prompt_emb: torch.Tensor) -> List[torch.Tensor]:
+    def _batch_similarity(
+        self, patches: Sequence[PatchLike], prompt_emb: torch.Tensor
+    ) -> List[torch.Tensor]:
         sims = []
         for patch in patches:
             zi = self._encode_patch(patch)
@@ -73,7 +75,9 @@ class ForensicCLIPScorer:
         return sims
 
     @staticmethod
-    def _aggregate(sim_vectors: List[torch.Tensor], weights: Iterable[float] | None = None) -> torch.Tensor:
+    def _aggregate(
+        sim_vectors: List[torch.Tensor], weights: Iterable[float] | None = None
+    ) -> torch.Tensor:
         mat = torch.stack(sim_vectors)
         if weights is None:
             return mat.mean(dim=0)
@@ -91,12 +95,27 @@ class ForensicCLIPScorer:
         sims_coarse = self._batch_similarity(patches_coarse, prompt_emb)
         sims_fine = self._batch_similarity(patches_fine, prompt_emb)
 
-        weights_coarse = [getattr(p, "weight", 1.0) if not isinstance(p, dict) else p.get("weight", 1.0) for p in patches_coarse]
-        weights_fine = [getattr(p, "weight", 1.0) if not isinstance(p, dict) else p.get("weight", 1.0) for p in patches_fine]
+        weights_coarse = [
+            getattr(p, "weight", 1.0)
+            if not isinstance(p, dict)
+            else p.get("weight", 1.0)
+            for p in patches_coarse
+        ]
+        weights_fine = [
+            getattr(p, "weight", 1.0)
+            if not isinstance(p, dict)
+            else p.get("weight", 1.0)
+            for p in patches_fine
+        ]
 
         agg_coarse = self._aggregate(sims_coarse, weights_coarse)
         agg_fine = self._aggregate(sims_fine, weights_fine)
 
         unified = alpha * agg_coarse + (1 - alpha) * agg_fine
         region_scores = sims_coarse + sims_fine
-        return SemanticScoreBundle(unified=unified, coarse=agg_coarse, fine=agg_fine, region_scores=region_scores)
+        return SemanticScoreBundle(
+            unified=unified,
+            coarse=agg_coarse,
+            fine=agg_fine,
+            region_scores=region_scores,
+        )

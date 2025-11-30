@@ -44,7 +44,9 @@ class SemanticForensicInterpreter:
         score_bundle = self.scorer.compute_dual_granularity_scores(
             patches_coarse, patches_fine, self.prompt_emb, alpha=self.alpha
         )
-        decision = self.uncertainty.evaluate(score_bundle.unified, score_bundle.region_scores)
+        decision = self.uncertainty.evaluate(
+            score_bundle.unified, score_bundle.region_scores
+        )
 
         reasoning_trace, actions = [], []
         if decision.need_reasoning:

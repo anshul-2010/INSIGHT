@@ -28,7 +28,9 @@ class EvidenceSynthesizer:
         actions: List[Dict[str, Any]],
         diagnostics: Dict[str, Any],
     ) -> EvidenceSummary:
-        score_map = {prompt: float(score) for prompt, score in zip(prompts, clip_scores.tolist())}
+        score_map = {
+            prompt: float(score) for prompt, score in zip(prompts, clip_scores.tolist())
+        }
         return EvidenceSummary(
             narrative=cot_output,
             clip_scores=score_map,
@@ -36,4 +38,3 @@ class EvidenceSynthesizer:
             actions=actions,
             diagnostics=diagnostics,
         )
-

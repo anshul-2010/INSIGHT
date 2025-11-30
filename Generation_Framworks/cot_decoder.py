@@ -8,11 +8,17 @@ from typing import Callable, List, Sequence
 
 
 class ChainOfThoughtDecoder:
-    def __init__(self, vlm_summarize_fn: Callable[..., str], fallback: str = "Artifacts identifiable without deeper reasoning."):
+    def __init__(
+        self,
+        vlm_summarize_fn: Callable[..., str],
+        fallback: str = "Artifacts identifiable without deeper reasoning.",
+    ):
         self.summarize_fn = vlm_summarize_fn
         self.fallback = fallback
 
-    def build(self, reasoning_trace: List[str], S, artifact_prompts: Sequence[str]) -> str:
+    def build(
+        self, reasoning_trace: List[str], S, artifact_prompts: Sequence[str]
+    ) -> str:
         if not reasoning_trace:
             return self.fallback
         return self.summarize_fn(

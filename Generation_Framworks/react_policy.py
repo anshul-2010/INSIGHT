@@ -19,7 +19,9 @@ class ReActStep:
 
 
 class ReActForensics:
-    def __init__(self, vlm_reason_fn: ReasonFn, vlm_action_fn: ActionFn, max_steps: int = 8):
+    def __init__(
+        self, vlm_reason_fn: ReasonFn, vlm_action_fn: ActionFn, max_steps: int = 8
+    ):
         self.reason_fn = vlm_reason_fn
         self.action_fn = vlm_action_fn
         self.max_steps = max_steps

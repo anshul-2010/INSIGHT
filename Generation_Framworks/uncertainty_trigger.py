@@ -19,11 +19,15 @@ class UncertaintyDecision:
 
 
 class CLIPUncertaintyModule:
-    def __init__(self, threshold_clip: float = 0.24, inconsistency_threshold: float = 0.18):
+    def __init__(
+        self, threshold_clip: float = 0.24, inconsistency_threshold: float = 0.18
+    ):
         self.tau = threshold_clip
         self.inc = inconsistency_threshold
 
-    def evaluate(self, semantic_scores: torch.Tensor, region_scores: List[torch.Tensor]) -> UncertaintyDecision:
+    def evaluate(
+        self, semantic_scores: torch.Tensor, region_scores: List[torch.Tensor]
+    ) -> UncertaintyDecision:
         max_score = semantic_scores.max().item()
         variance = 0.0
         if len(region_scores) > 1:
