@@ -2,6 +2,7 @@ import torch
 import numpy as np
 from scipy.fftpack import dct
 
+
 def to_device(batch, device):
     """Move batch (imgs, labels) to device.
 
@@ -14,10 +15,12 @@ def to_device(batch, device):
         imgs = imgs.to(device)
     return imgs, labels.to(device)
 
+
 def topk_accuracy(logits, labels, k=1):
     _, idx = logits.topk(k, dim=1)
-    correct = idx.eq(labels.view(-1,1).expand_as(idx))
+    correct = idx.eq(labels.view(-1, 1).expand_as(idx))
     return float(correct[:, :k].any(dim=1).float().mean().item())
+
 
 def compute_dct_batch(x: torch.Tensor) -> torch.Tensor:
     """Compute a 2D DCT per channel, preferring torch.fft for GPU support."""
@@ -37,13 +40,17 @@ def _compute_dct_numpy(x: torch.Tensor) -> torch.Tensor:
     out = np.zeros_like(x_np)
     for b in range(B):
         for c in range(C):
-            out[b, c, :, :] = dct(dct(x_np[b, c, :, :], axis=0, norm="ortho"), axis=1, norm="ortho")
+            out[b, c, :, :] = dct(
+                dct(x_np[b, c, :, :], axis=0, norm="ortho"), axis=1, norm="ortho"
+            )
     return torch.from_numpy(out).to(device=x.device, dtype=x.dtype)
+
 
 def freeze_bn(module):
     for m in module.modules():
         if isinstance(m, torch.nn.BatchNorm2d):
             m.eval()
+
 
 def l2_normalize(x, dim=1, eps=1e-10):
     return x / (torch.norm(x, dim=dim, keepdim=True) + eps)

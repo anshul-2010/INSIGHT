@@ -93,7 +93,10 @@ def build_single_model(arch: str, num_classes: int, latent_dim: int):
 def maybe_build_ensemble(cfg):
     if not cfg.ensemble_archs:
         return build_single_model(cfg.arch, cfg.num_classes, cfg.latent_dim)
-    members = [build_single_model(name, cfg.num_classes, cfg.latent_dim) for name in cfg.ensemble_archs]
+    members = [
+        build_single_model(name, cfg.num_classes, cfg.latent_dim)
+        for name in cfg.ensemble_archs
+    ]
     return SimpleEnsemble(members)
 
 
@@ -102,7 +105,9 @@ def maybe_adv_examples(cfg, model, imgs, labels):
         return imgs
     if cfg.adv_prob > 0 and torch.rand(1).item() > cfg.adv_prob:
         return imgs
-    return pgd_attack(model, imgs, labels, eps=cfg.adv_eps, alpha=cfg.adv_step, iters=cfg.adv_iters)
+    return pgd_attack(
+        model, imgs, labels, eps=cfg.adv_eps, alpha=cfg.adv_step, iters=cfg.adv_iters
+    )
 
 
 def train_epoch(model, loader, optimizer, device, cfg, scaler=None):
@@ -167,8 +172,18 @@ def load_checkpoint(path: Path, model, optimizer):
 def parse_args():
     parser = argparse.ArgumentParser(description="INSIGHT low-res classifier training")
     parser.add_argument("--data", type=str, default="data")
-    parser.add_argument("--arch", type=str, default="hybrid", choices=["hybrid", "resnet", "cnn", "vit", "dct", "autoencoder", "bnn"])
-    parser.add_argument("--ensemble-archs", type=str, nargs="*", help="Optional list of backbones to ensemble")
+    parser.add_argument(
+        "--arch",
+        type=str,
+        default="hybrid",
+        choices=["hybrid", "resnet", "cnn", "vit", "dct", "autoencoder", "bnn"],
+    )
+    parser.add_argument(
+        "--ensemble-archs",
+        type=str,
+        nargs="*",
+        help="Optional list of backbones to ensemble",
+    )
     parser.add_argument("--batch", type=int, default=128)
     parser.add_argument("--epochs", type=int, default=50)
     parser.add_argument("--lr", type=float, default=1e-3)
@@ -176,15 +191,24 @@ def parse_args():
     parser.add_argument("--device", type=str, default="cuda")
     parser.add_argument("--latent-dim", type=int, default=128, dest="latent_dim")
     parser.add_argument("--num-workers", type=int, default=4)
-    parser.add_argument("--adv", action="store_true", help="Enable adversarial training (PGD)")
-    parser.add_argument("--adv-prob", type=float, default=1.0, help="Probability of applying adversarial augmentation per batch")
+    parser.add_argument(
+        "--adv", action="store_true", help="Enable adversarial training (PGD)"
+    )
+    parser.add_argument(
+        "--adv-prob",
+        type=float,
+        default=1.0,
+        help="Probability of applying adversarial augmentation per batch",
+    )
     parser.add_argument("--adv-eps", type=float, default=0.02)
     parser.add_argument("--adv-step", type=float, default=0.005)
     parser.add_argument("--adv-iters", type=int, default=7)
     parser.add_argument("--amp", action="store_true", help="Use mixed precision")
     parser.add_argument("--save-dir", type=str, default="checkpoints")
     parser.add_argument("--resume", type=str, help="Path to checkpoint to resume from")
-    parser.add_argument("--patience", type=int, default=15, help="Early stopping patience (epochs)")
+    parser.add_argument(
+        "--patience", type=int, default=15, help="Early stopping patience (epochs)"
+    )
     parser.add_argument("--seed", type=int, default=42)
     return parser.parse_args()
 
@@ -200,8 +224,20 @@ def main():
     device = torch.device(cfg.device if torch.cuda.is_available() else "cpu")
     train_ds = InsightDataset(cfg.data, split="train", img_size=32)
     val_ds = InsightDataset(cfg.data, split="val", img_size=32)
-    train_loader = DataLoader(train_ds, batch_size=cfg.batch, shuffle=True, num_workers=cfg.num_workers, pin_memory=True)
-    val_loader = DataLoader(val_ds, batch_size=cfg.batch, shuffle=False, num_workers=cfg.num_workers, pin_memory=True)
+    train_loader = DataLoader(
+        train_ds,
+        batch_size=cfg.batch,
+        shuffle=True,
+        num_workers=cfg.num_workers,
+        pin_memory=True,
+    )
+    val_loader = DataLoader(
+        val_ds,
+        batch_size=cfg.batch,
+        shuffle=False,
+        num_workers=cfg.num_workers,
+        pin_memory=True,
+    )
 
     save_dir = Path(cfg.save_dir)
     save_dir.mkdir(parents=True, exist_ok=True)
@@ -215,13 +251,17 @@ def main():
     if cfg.resume:
         ckpt_path = Path(cfg.resume)
         start_epoch, best_val = load_checkpoint(ckpt_path, model, optimizer)
-        print(f"Resumed from {ckpt_path} @ epoch {start_epoch} (best_val={best_val:.3f})")
+        print(
+            f"Resumed from {ckpt_path} @ epoch {start_epoch} (best_val={best_val:.3f})"
+        )
 
     patience_counter = 0
     history = []
 
     for epoch in range(start_epoch, cfg.epochs):
-        train_loss, train_acc = train_epoch(model, train_loader, optimizer, device, cfg, scaler if cfg.amp else None)
+        train_loss, train_acc = train_epoch(
+            model, train_loader, optimizer, device, cfg, scaler if cfg.amp else None
+        )
         val_loss, val_acc = eval_epoch(model, val_loader, device)
         history.append(
             {

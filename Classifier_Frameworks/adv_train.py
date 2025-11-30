@@ -11,6 +11,7 @@ except ImportError:  # pragma: no cover
     from attacks import pgd_attack
     from utils import to_device
 
+
 def adv_train_epoch(model, loader, optim, device, eps=0.03, alpha=0.007, iters=7):
     """Perform one epoch of adversarial training using PGD.
 
@@ -23,11 +24,11 @@ def adv_train_epoch(model, loader, optim, device, eps=0.03, alpha=0.007, iters=7
         imgs, labels = to_device((imgs, labels), device)
         # generate adversarial examples for current batch
         x_adv = pgd_attack(model, imgs, labels, eps=eps, alpha=alpha, iters=iters)
-        logits,_ = model(x_adv)
+        logits, _ = model(x_adv)
         loss = criterion(logits, labels)
         optim.zero_grad()
         loss.backward()
         optim.step()
         total_loss += loss.item() * imgs.size(0)
         total_acc += (logits.argmax(1) == labels).float().sum().item()
-    return total_loss/len(loader.dataset), total_acc/len(loader.dataset)
+    return total_loss / len(loader.dataset), total_acc / len(loader.dataset)

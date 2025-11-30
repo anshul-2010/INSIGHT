@@ -59,7 +59,9 @@ class AutoencoderDetector(nn.Module):
     def forward(self, x: torch.Tensor):
         recon, z = self.autoencoder(x)
         # Mean absolute reconstruction error per sample as coarse anomaly descriptor
-        recon_err = torch.mean(torch.abs(x - recon).flatten(start_dim=1), dim=1, keepdim=True)
+        recon_err = torch.mean(
+            torch.abs(x - recon).flatten(start_dim=1), dim=1, keepdim=True
+        )
         feat = torch.cat([z, recon_err], dim=1)
         logits = self.head(feat)
         return logits, feat, recon

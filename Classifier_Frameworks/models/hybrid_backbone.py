@@ -83,7 +83,9 @@ class FrequencyEncoder(nn.Module):
 class HybridBackbone(nn.Module):
     """Final forensic classifier used throughout INSIGHT."""
 
-    def __init__(self, num_classes: int = 2, embed_dim: int = 256, spatial_base: int = 32):
+    def __init__(
+        self, num_classes: int = 2, embed_dim: int = 256, spatial_base: int = 32
+    ):
         super().__init__()
         self.spatial = SpatialEncoder(base_channels=spatial_base)
         self.frequency = FrequencyEncoder()
@@ -103,4 +105,3 @@ class HybridBackbone(nn.Module):
         logits = self.classifier(embed)
         # Provide GradCAM-friendly activation map (spatial branch) as auxiliary output
         return logits, embed, {"spatial_map": spatial_map, "frequency_map": freq_map}
-

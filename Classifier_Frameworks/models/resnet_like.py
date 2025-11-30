@@ -2,6 +2,7 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+
 class BasicBlock(nn.Module):
     def __init__(self, in_ch, out_ch, stride=1):
         super().__init__()
@@ -10,19 +11,21 @@ class BasicBlock(nn.Module):
         self.conv2 = nn.Conv2d(out_ch, out_ch, 3, padding=1, bias=False)
         self.bn2 = nn.BatchNorm2d(out_ch)
         self.shortcut = nn.Sequential()
-        if stride!=1 or in_ch!=out_ch:
+        if stride != 1 or in_ch != out_ch:
             self.shortcut = nn.Sequential(
                 nn.Conv2d(in_ch, out_ch, 1, stride=stride, bias=False),
-                nn.BatchNorm2d(out_ch)
+                nn.BatchNorm2d(out_ch),
             )
-    def forward(self,x):
+
+    def forward(self, x):
         out = F.relu(self.bn1(self.conv1(x)))
         out = self.bn2(self.conv2(out))
         out += self.shortcut(x)
         return F.relu(out)
 
+
 class ResNetSmall(nn.Module):
-    def __init__(self, block=BasicBlock, layers=[2,2,2], num_classes=2):
+    def __init__(self, block=BasicBlock, layers=[2, 2, 2], num_classes=2):
         super().__init__()
         self.in_ch = 32
         self.conv1 = nn.Conv2d(3, self.in_ch, kernel_size=3, padding=1, bias=False)
@@ -34,18 +37,18 @@ class ResNetSmall(nn.Module):
         self.fc = nn.Linear(128, num_classes)
 
     def _make_layer(self, block, out_ch, blocks, stride):
-        strides = [stride] + [1]*(blocks-1)
+        strides = [stride] + [1] * (blocks - 1)
         layers = []
         for s in strides:
             layers.append(block(self.in_ch, out_ch, stride=s))
             self.in_ch = out_ch
         return nn.Sequential(*layers)
 
-    def forward(self,x):
+    def forward(self, x):
         x = F.relu(self.bn1(self.conv1(x)))
         x = self.layer1(x)
         x = self.layer2(x)
         x = self.layer3(x)
-        feat = torch.flatten(self.avgpool(x),1)
+        feat = torch.flatten(self.avgpool(x), 1)
         logits = self.fc(feat)
         return logits, feat
