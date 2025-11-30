@@ -33,16 +33,26 @@ class RubricScore:
 
 
 class RubricEvaluatorAnthropic:
-    def __init__(self, api_key=None, model: str = "claude-2.1", timeout: int = 30, weights=None):
+    def __init__(
+        self, api_key=None, model: str = "claude-2.1", timeout: int = 30, weights=None
+    ):
         api_key = api_key or os.environ.get("ANTHROPIC_API_KEY")
         if not api_key:
-            raise RuntimeError("Anthropic API key not found. Set ANTHROPIC_API_KEY or pass api_key.")
+            raise RuntimeError(
+                "Anthropic API key not found. Set ANTHROPIC_API_KEY or pass api_key."
+            )
         if Anthropic is None:
-            raise RuntimeError("anthropic python package not installed. pip install anthropic")
+            raise RuntimeError(
+                "anthropic python package not installed. pip install anthropic"
+            )
         self.client = Anthropic(api_key=api_key)
         self.model = model
         self.timeout = timeout
-        self.weights = weights or {"clarity": 0.33, "specificity": 0.33, "relevance": 0.34}
+        self.weights = weights or {
+            "clarity": 0.33,
+            "specificity": 0.33,
+            "relevance": 0.34,
+        }
 
     def _make_prompt(self, artifact_name: str, explanation_text: str) -> str:
         rubric_desc = (
@@ -51,7 +61,7 @@ class RubricEvaluatorAnthropic:
             "1. clarity – linguistic coherence.\n"
             "2. specificity – concrete references to regions/textures.\n"
             "3. relevance – alignment with the stated artifact hypothesis.\n"
-            "Return JSON with fields {\"clarity\": float, \"specificity\": float, \"relevance\": float, \"comments\": string}.\n"
+            'Return JSON with fields {"clarity": float, "specificity": float, "relevance": float, "comments": string}.\n'
         )
         prompt = (
             f"{HUMAN_PROMPT}\n"
@@ -62,7 +72,9 @@ class RubricEvaluatorAnthropic:
         )
         return prompt
 
-    def score(self, artifact_name: str, explanation_text: str) -> Tuple[RubricScore, float]:
+    def score(
+        self, artifact_name: str, explanation_text: str
+    ) -> Tuple[RubricScore, float]:
         prompt = self._make_prompt(artifact_name, explanation_text)
         resp = self.client.completions.create(
             model=self.model,
@@ -70,7 +82,11 @@ class RubricEvaluatorAnthropic:
             temperature=0.0,
             max_tokens=300,
         )
-        raw = resp.get("completion", "") if isinstance(resp, dict) else getattr(resp, "completion", "")
+        raw = (
+            resp.get("completion", "")
+            if isinstance(resp, dict)
+            else getattr(resp, "completion", "")
+        )
         parsed, comments = self._parse_json(raw)
 
         score = RubricScore(
@@ -84,7 +100,11 @@ class RubricEvaluatorAnthropic:
 
     def _aggregate(self, score: RubricScore) -> float:
         w = self.weights
-        total = score.clarity * w["clarity"] + score.specificity * w["specificity"] + score.relevance * w["relevance"]
+        total = (
+            score.clarity * w["clarity"]
+            + score.specificity * w["specificity"]
+            + score.relevance * w["relevance"]
+        )
         return max(0.0, min(1.0, float(total)))
 
     @staticmethod

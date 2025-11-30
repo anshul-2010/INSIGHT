@@ -16,9 +16,13 @@ except Exception as exc:  # pragma: no cover
 
 
 class Paraphraser:
-    def __init__(self, model_name: str = "google/flan-t5-large", device: str | None = None):
+    def __init__(
+        self, model_name: str = "google/flan-t5-large", device: str | None = None
+    ):
         if AutoModelForCausalLM is None or AutoTokenizer is None or torch is None:
-            raise RuntimeError("transformers not installed. Run `pip install transformers accelerate safetensors`.")
+            raise RuntimeError(
+                "transformers not installed. Run `pip install transformers accelerate safetensors`."
+            )
         self.device = device or ("cuda" if torch.cuda.is_available() else "cpu")
         self.tokenizer = AutoTokenizer.from_pretrained(model_name)
         self.model = AutoModelForCausalLM.from_pretrained(model_name).to(self.device)

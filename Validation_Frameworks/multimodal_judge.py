@@ -46,7 +46,9 @@ class JudgeBackend(abc.ABC):
 
 
 class HTTPJudgeAdapter(JudgeBackend):
-    def __init__(self, endpoint_url: str, api_key: str | None = None, timeout: int = 30):
+    def __init__(
+        self, endpoint_url: str, api_key: str | None = None, timeout: int = 30
+    ):
         self.endpoint = endpoint_url
         self.api_key = api_key
         self.timeout = timeout
@@ -63,7 +65,9 @@ class HTTPJudgeAdapter(JudgeBackend):
         headers = {"Content-Type": "application/json"}
         if self.api_key:
             headers["Authorization"] = f"Bearer {self.api_key}"
-        resp = self.requests.post(self.endpoint, json=payload, headers=headers, timeout=self.timeout)
+        resp = self.requests.post(
+            self.endpoint, json=payload, headers=headers, timeout=self.timeout
+        )
         resp.raise_for_status()
         data = resp.json()
         verdict = str(data.get("verdict", "")).lower() in {"yes", "y", "true", "1"}

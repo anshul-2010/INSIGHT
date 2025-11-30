@@ -33,7 +33,9 @@ class PipelineOrchestrator:
     ):
         self.rubric = RubricEvaluatorAnthropic(api_key=anthropic_api_key)
         self.judge_backend = judge_backend
-        self.paraphraser = Paraphraser(model_name=paraphraser_model, device=paraphraser_device)
+        self.paraphraser = Paraphraser(
+            model_name=paraphraser_model, device=paraphraser_device
+        )
 
     def set_judge_backend(self, judge_backend: JudgeBackend):
         self.judge_backend = judge_backend
@@ -48,11 +50,16 @@ class PipelineOrchestrator:
         top_k: int = 5,
     ) -> StageOutputs:
         if self.judge_backend is None:
-            raise RuntimeError("Judge backend not configured. Call set_judge_backend().")
+            raise RuntimeError(
+                "Judge backend not configured. Call set_judge_backend()."
+            )
         if len(artifacts) != len(explanations):
             raise ValueError("Artifacts and explanations must align.")
 
-        rubric_scores = [self.rubric.score(artifacts[i], explanations[i]) for i in range(len(artifacts))]
+        rubric_scores = [
+            self.rubric.score(artifacts[i], explanations[i])
+            for i in range(len(artifacts))
+        ]
 
         judge_results: List[JudgeResult] = []
         for artifact, explanation in zip(artifacts, explanations):
@@ -67,7 +74,9 @@ class PipelineOrchestrator:
             paraphrases[idx] = {}
             for style in styles:
                 try:
-                    paraphrases[idx][style] = self.paraphraser.transform(text, style=style)
+                    paraphrases[idx][style] = self.paraphraser.transform(
+                        text, style=style
+                    )
                 except Exception:
                     paraphrases[idx][style] = text
 

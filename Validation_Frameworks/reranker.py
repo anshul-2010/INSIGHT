@@ -49,9 +49,7 @@ def filter_and_rerank(
     top_k: int = 5,
 ) -> List[ArtifactMetadata]:
     filtered = [
-        m
-        for m in metas
-        if m.judge.verdict and m.judge.confidence >= tau_confidence
+        m for m in metas if m.judge.verdict and m.judge.confidence >= tau_confidence
     ]
     ranked = sorted(
         filtered,
