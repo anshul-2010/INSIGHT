@@ -22,7 +22,9 @@ from Classifier_Frameworks.models.hybrid_backbone import HybridBackbone
 from Classifier_Frameworks.insight_dataset import InsightDataset
 
 
-def load_datasets(root_dir: str, names: Iterable[str] = ("dfdc", "sra")) -> Dict[str, List[Tuple[str, int]]]:
+def load_datasets(
+    root_dir: str, names: Iterable[str] = ("dfdc", "sra")
+) -> Dict[str, List[Tuple[str, int]]]:
     """Load image paths and labels from dataset directories under `root_dir`.
 
     Expected folder structure:
@@ -53,7 +55,12 @@ class ForensicEvaluator:
     Provides functions to compute scalar scores for images using different baselines.
     """
 
-    def __init__(self, device: str = "cpu", prompts: Iterable[str] = ("tampered face",), use_clip: bool = True):
+    def __init__(
+        self,
+        device: str = "cpu",
+        prompts: Iterable[str] = ("tampered face",),
+        use_clip: bool = True,
+    ):
         self.device = device
         self.resnet = ResNetSmall().to(device).eval()
         self.vit = TinyViT(img_size=32).to(device).eval()
@@ -63,13 +70,19 @@ class ForensicEvaluator:
             try:
                 self.clip = ForensicCLIPScorer(device=device)
             except Exception:
-                print("Warning: CLIP not available. Falling back to text heuristics for scoring.")
+                print(
+                    "Warning: CLIP not available. Falling back to text heuristics for scoring."
+                )
                 self.clip = None
         else:
             self.clip = None
         self.prompts = list(prompts)
-        self.prompt_emb = self.clip.encode_prompts(self.prompts) if self.clip is not None else None
-        self.transform = transforms.Compose([transforms.Resize((32, 32)), transforms.ToTensor()])
+        self.prompt_emb = (
+            self.clip.encode_prompts(self.prompts) if self.clip is not None else None
+        )
+        self.transform = transforms.Compose(
+            [transforms.Resize((32, 32)), transforms.ToTensor()]
+        )
 
     def _pil_to_tensor(self, pil: Image.Image) -> torch.Tensor:
         t = self.transform(pil).unsqueeze(0).to(self.device)
@@ -77,7 +90,10 @@ class ForensicEvaluator:
 
     def gradcam_score(self, sr_img: np.ndarray) -> float:
         # sr_img is HxWxC float in [0,1]; compute stage1 gradcam and use mean as score
-        outputs = run_stage1(sr_img if isinstance(sr_img, str) else _tmp_img_to_path(sr_img), device=self.device)
+        outputs = run_stage1(
+            sr_img if isinstance(sr_img, str) else _tmp_img_to_path(sr_img),
+            device=self.device,
+        )
         # If run_stage1 accepted path, then it will have gradcam in outputs
         return float(np.mean(outputs.gradcam))
 
@@ -85,7 +101,7 @@ class ForensicEvaluator:
         # Compute CLIP score by comparing full image embedding to prompts. Feed a numpy array into the checker.
         if isinstance(sr_img, str):
             # read image from disk
-            pil = Image.open(sr_img).convert('RGB')
+            pil = Image.open(sr_img).convert("RGB")
             np_img = np.asarray(pil).astype(np.float32) / 255.0
         else:
             np_img = sr_img.astype(np.float32) / 255.0
@@ -93,13 +109,21 @@ class ForensicEvaluator:
             return 0.0
         emb = self.clip._encode_patch(np_img)
         # ForensicCLIPScorer.encode_prompts returns normalized vectors
-        cos_sim = np.array(torch.nn.functional.cosine_similarity(emb.unsqueeze(0), self.prompt_emb, dim=1).cpu())
+        cos_sim = np.array(
+            torch.nn.functional.cosine_similarity(
+                emb.unsqueeze(0), self.prompt_emb, dim=1
+            ).cpu()
+        )
         # return the max similarity value
         return float(np.max(cos_sim))
 
     def cnn_score(self, sr_img: np.ndarray) -> float:
         # Run the ResNet backbone; produce probability of class 1
-        pil = Image.fromarray((sr_img * 255).astype('uint8')) if isinstance(sr_img, np.ndarray) else Image.open(sr_img).convert('RGB')
+        pil = (
+            Image.fromarray((sr_img * 255).astype("uint8"))
+            if isinstance(sr_img, np.ndarray)
+            else Image.open(sr_img).convert("RGB")
+        )
         t = self._pil_to_tensor(pil)
         with torch.no_grad():
             logits, _ = self.resnet(t)
@@ -107,7 +131,11 @@ class ForensicEvaluator:
         return float(p)
 
     def vit_score(self, sr_img: np.ndarray) -> float:
-        pil = Image.fromarray((sr_img * 255).astype('uint8')) if isinstance(sr_img, np.ndarray) else Image.open(sr_img).convert('RGB')
+        pil = (
+            Image.fromarray((sr_img * 255).astype("uint8"))
+            if isinstance(sr_img, np.ndarray)
+            else Image.open(sr_img).convert("RGB")
+        )
         t = self._pil_to_tensor(pil)
         with torch.no_grad():
             logits, _ = self.vit(t)
@@ -116,7 +144,10 @@ class ForensicEvaluator:
 
     def insight_score(self, sr_img: np.ndarray) -> float:
         # compute stage1 patches and use CLIP patch scoring to return max patch score
-        outputs = run_stage1(sr_img if isinstance(sr_img, str) else _tmp_img_to_path(sr_img), device=self.device)
+        outputs = run_stage1(
+            sr_img if isinstance(sr_img, str) else _tmp_img_to_path(sr_img),
+            device=self.device,
+        )
         patches = outputs.patches
         sims = []
         for p in patches:
@@ -124,7 +155,9 @@ class ForensicEvaluator:
                 sims.append(0.0)
                 continue
             z = self.clip._encode_patch(p)
-            sim = torch.nn.functional.cosine_similarity(z.unsqueeze(0), self.prompt_emb, dim=1)
+            sim = torch.nn.functional.cosine_similarity(
+                z.unsqueeze(0), self.prompt_emb, dim=1
+            )
             sims.append(sim.max().item())
         if len(sims) == 0:
             return 0.0
@@ -140,15 +173,32 @@ def evaluate_auroc(scores: Iterable[float], labels: Iterable[int]) -> float:
 
 def table_print(dct: dict, title: str = None):
     from tabulate import tabulate
+
     rows = []
     for k, v in dct.items():
         if isinstance(v, dict):
-            rows.append([k] + [f"{v2:.4f}" if isinstance(v2, (float, int)) else str(v2) for v2 in v.values()])
+            rows.append(
+                [k]
+                + [
+                    f"{v2:.4f}" if isinstance(v2, (float, int)) else str(v2)
+                    for v2 in v.values()
+                ]
+            )
         else:
             rows.append([k, v])
     if title:
         print("==", title, "==")
-    print(tabulate(rows, headers=["method"] + (list(list(dct.values())[0].keys()) if isinstance(list(dct.values())[0], dict) else ["value"])))
+    print(
+        tabulate(
+            rows,
+            headers=["method"]
+            + (
+                list(list(dct.values())[0].keys())
+                if isinstance(list(dct.values())[0], dict)
+                else ["value"]
+            ),
+        )
+    )
 
 
 def _tmp_img_to_path(img: np.ndarray) -> str:

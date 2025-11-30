@@ -20,8 +20,15 @@ def compute_judge_metrics(data_root: str, dataset_name: str = "sra", subset: int
     ds = load_datasets(data_root, names=[dataset_name]).get(dataset_name, [])
     ds = ds[:subset]
     # instantiate reasoner and judge (fallback to a simple text-LLM stub if needed)
-    reasoner = SemanticForensicInterpreter(prompts=["tampered face"], reason_fn=lambda *a, **k: [], act_fn=lambda *a, **k: [], summarize_fn=lambda *a, **k: "")
-    judge = TextOnlyJudgeAdapter(lambda prompt: '{"verdict":"no","confidence":0.5,"justification":"placeholder"}')
+    reasoner = SemanticForensicInterpreter(
+        prompts=["tampered face"],
+        reason_fn=lambda *a, **k: [],
+        act_fn=lambda *a, **k: [],
+        summarize_fn=lambda *a, **k: "",
+    )
+    judge = TextOnlyJudgeAdapter(
+        lambda prompt: '{"verdict":"no","confidence":0.5,"justification":"placeholder"}'
+    )
 
     accuracies: List[bool] = []
     false_supports: List[bool] = []
@@ -31,14 +38,24 @@ def compute_judge_metrics(data_root: str, dataset_name: str = "sra", subset: int
     for img_path, support_label in ds:
         outputs = run_stage1(img_path)
         patches = outputs.patches
-        explanation, _ = reasoner.run(outputs.sr_img, patches, patches, outputs.hierarchy)
+        explanation, _ = reasoner.run(
+            outputs.sr_img, patches, patches, outputs.hierarchy
+        )
         jr = judge.judge(outputs.sr_img, "Image is real?", explanation)
         accuracies.append(jr.verdict == bool(support_label))
         false_supports.append(jr.verdict and support_label == 0)
         confs.append(jr.confidence)
-        max_saliences.append(max(outputs.superpixel_activations.values()) if outputs.superpixel_activations else 0.0)
+        max_saliences.append(
+            max(outputs.superpixel_activations.values())
+            if outputs.superpixel_activations
+            else 0.0
+        )
 
-    conf_sal_corr = float(np.corrcoef(confs, max_saliences)[0, 1]) if len(confs) > 1 else float("nan")
+    conf_sal_corr = (
+        float(np.corrcoef(confs, max_saliences)[0, 1])
+        if len(confs) > 1
+        else float("nan")
+    )
     final = {
         "accuracy": float(np.mean(accuracies)),
         "false_support_rate": float(np.mean(false_supports)),

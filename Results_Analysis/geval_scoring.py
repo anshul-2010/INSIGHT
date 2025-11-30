@@ -21,24 +21,49 @@ def _safe_rubric_evaluator():
     try:
         return RubricEvaluatorAnthropic()
     except Exception:
-        print("Rubric evaluator not available (Anthropic API). Using fallback heuristic scorer.")
+        print(
+            "Rubric evaluator not available (Anthropic API). Using fallback heuristic scorer."
+        )
+
         class Fallback:
             def score(self, artifact, text):
-                return (type("R", (), {"clarity": 0.5, "specificity": 0.5, "relevance": 0.5, "comments": "fallback"})(), 0.5)
+                return (
+                    type(
+                        "R",
+                        (),
+                        {
+                            "clarity": 0.5,
+                            "specificity": 0.5,
+                            "relevance": 0.5,
+                            "comments": "fallback",
+                        },
+                    )(),
+                    0.5,
+                )
+
         return Fallback()
 
 
-def compute_explanation_scores(data_root: str, dataset_name: str = "dfdc", subset: int = 500):
+def compute_explanation_scores(
+    data_root: str, dataset_name: str = "dfdc", subset: int = 500
+):
     ds = load_datasets(data_root, names=[dataset_name]).get(dataset_name, [])
     ds = ds[:subset]
     evaluator = _safe_rubric_evaluator()
-    reasoner = SemanticForensicInterpreter(prompts=["tampered face"], reason_fn=lambda *a, **k: [], act_fn=lambda *a, **k: [], summarize_fn=lambda *a, **k: "")
+    reasoner = SemanticForensicInterpreter(
+        prompts=["tampered face"],
+        reason_fn=lambda *a, **k: [],
+        act_fn=lambda *a, **k: [],
+        summarize_fn=lambda *a, **k: "",
+    )
 
     systems = {
         "vanilla": lambda image, patches: reasoner.run(image, patches, patches, None),
         "react": lambda image, patches: reasoner.run(image, patches, patches, None),
         "cot": lambda image, patches: reasoner.run(image, patches, patches, None),
-        "insight_full": lambda image, patches: reasoner.run(image, patches, patches, None),
+        "insight_full": lambda image, patches: reasoner.run(
+            image, patches, patches, None
+        ),
     }
 
     rubrics = ["clarity", "specificity", "relevance"]
@@ -54,7 +79,13 @@ def compute_explanation_scores(data_root: str, dataset_name: str = "dfdc", subse
             for r in rubrics:
                 explanation_scores[sys_name][r].append(getattr(score_obj, r, 0.0))
 
-    final_exp_results = {sys: {r: (float(np.mean(vals)), float(np.std(vals))) for r, vals in metrics.items()} for sys, metrics in explanation_scores.items()}
+    final_exp_results = {
+        sys: {
+            r: (float(np.mean(vals)), float(np.std(vals)))
+            for r, vals in metrics.items()
+        }
+        for sys, metrics in explanation_scores.items()
+    }
     return final_exp_results
 
 
@@ -64,8 +95,11 @@ def main():
     p.add_argument("--dataset", type=str, default="dfdc")
     p.add_argument("--subset", type=int, default=100)
     args = p.parse_args()
-    results = compute_explanation_scores(args.data_root, args.dataset, subset=args.subset)
+    results = compute_explanation_scores(
+        args.data_root, args.dataset, subset=args.subset
+    )
     from eval_helpers import table_print
+
     table_print(results, title="Explanation Quality (G-Eval Scores)")
 
 
