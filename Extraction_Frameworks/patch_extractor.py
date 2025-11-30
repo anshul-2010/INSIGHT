@@ -26,7 +26,9 @@ def bbox_from_mask(mask: np.ndarray) -> Optional[Tuple[int, int, int, int]]:
     return int(ys.min()), int(ys.max()), int(xs.min()), int(xs.max())
 
 
-def subdivide_bbox(bbox: Tuple[int, int, int, int], patch_size: int, stride: Optional[int] = None):
+def subdivide_bbox(
+    bbox: Tuple[int, int, int, int], patch_size: int, stride: Optional[int] = None
+):
     y1, y2, x1, x2 = bbox
     stride = stride or patch_size
     patches = []
@@ -86,7 +88,7 @@ def extract_attention_weighted_patches(
 
         raw_scores: List[float] = []
         patch_meta: List[Tuple[int, int, int, int]] = []
-        for (py1, py2, px1, px2) in patches_coords:
+        for py1, py2, px1, px2 in patches_coords:
             pmask = mask[py1:py2, px1:px2]
             if pmask.size == 0:
                 continue

@@ -43,7 +43,9 @@ class TinyTransformer(nn.Module):
         self.norm1 = nn.LayerNorm(dim)
         self.norm2 = nn.LayerNorm(dim)
         self.attn = nn.MultiheadAttention(dim, nhead, batch_first=True)
-        self.ffn = nn.Sequential(nn.Linear(dim, dim * 2), nn.GELU(), nn.Linear(dim * 2, dim))
+        self.ffn = nn.Sequential(
+            nn.Linear(dim, dim * 2), nn.GELU(), nn.Linear(dim * 2, dim)
+        )
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         b, c, h, w = x.shape
@@ -88,7 +90,9 @@ class DRCTStage(nn.Module):
 
 
 class DRCT_SR(nn.Module):
-    def __init__(self, in_ch: int = 3, base_dim: int = 64, num_blocks: int = 4, scale: int = 4):
+    def __init__(
+        self, in_ch: int = 3, base_dim: int = 64, num_blocks: int = 4, scale: int = 4
+    ):
         super().__init__()
         if scale not in (2, 4):
             raise ValueError("scale should be 2 or 4 for the current DRCT prototype.")
@@ -102,7 +106,9 @@ class DRCT_SR(nn.Module):
         for _ in range(1 if scale == 2 else 2):
             self.ups_layers.append(
                 nn.Sequential(
-                    nn.Conv2d(base_dim, base_dim * 4, kernel_size=3, padding=1, bias=False),
+                    nn.Conv2d(
+                        base_dim, base_dim * 4, kernel_size=3, padding=1, bias=False
+                    ),
                     nn.PixelShuffle(2),
                     nn.ReLU(inplace=True),
                 )

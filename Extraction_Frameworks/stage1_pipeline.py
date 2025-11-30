@@ -51,7 +51,9 @@ class DummyArtifactClassifier(nn.Module):
         return self.fc(pooled)
 
 
-def _prepare_lr_tensor(img: np.ndarray, target_hw=(32, 32), device="cpu") -> torch.Tensor:
+def _prepare_lr_tensor(
+    img: np.ndarray, target_hw=(32, 32), device="cpu"
+) -> torch.Tensor:
     lr_img = resize_numpy(img, target_hw)
     return to_tensor(lr_img).to(device), lr_img
 
@@ -74,13 +76,21 @@ def run_stage1(
     with torch.no_grad():
         sr_out = sr_model(lr_tensor)
     sr_tensor = sr_out.detach().clone().requires_grad_(True)
-    sr_float = sr_out.detach().cpu().squeeze(0).permute(1, 2, 0).numpy().astype(np.float32)
+    sr_float = (
+        sr_out.detach().cpu().squeeze(0).permute(1, 2, 0).numpy().astype(np.float32)
+    )
 
-    classifier = classifier.to(device) if classifier is not None else DummyArtifactClassifier().to(device)
+    classifier = (
+        classifier.to(device)
+        if classifier is not None
+        else DummyArtifactClassifier().to(device)
+    )
     classifier.eval()
     target_layer = target_layer or auto_select_last_conv(classifier)
     gradcam = GradCAM(classifier, target_layer)
-    cam = gradcam.compute_cam(sr_tensor.to(device), class_idx=class_idx, upsample_to=sr_float.shape[:2])
+    cam = gradcam.compute_cam(
+        sr_tensor.to(device), class_idx=class_idx, upsample_to=sr_float.shape[:2]
+    )
 
     hierarchy = build_hierarchy(sr_float, levels=sp_levels)
     finest_masks = hierarchy.get_masks(hierarchy.finest_level())
@@ -105,7 +115,9 @@ def run_stage1(
     )
 
 
-def save_stage1_visuals(outputs: StageOneOutputs, out_dir: str = "stage1_out", max_patches: int = 10):
+def save_stage1_visuals(
+    outputs: StageOneOutputs, out_dir: str = "stage1_out", max_patches: int = 10
+):
     os.makedirs(out_dir, exist_ok=True)
     lr = (outputs.lr_img * 255).astype("uint8")
     sr = (outputs.sr_img * 255).astype("uint8")

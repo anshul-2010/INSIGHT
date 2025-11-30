@@ -31,7 +31,9 @@ class SuperpixelHierarchy:
         return self.masks[level]
 
 
-def slic_segments(rgb_img: np.ndarray, n_segments: int = 150, compactness: float = 10.0) -> np.ndarray:
+def slic_segments(
+    rgb_img: np.ndarray, n_segments: int = 150, compactness: float = 10.0
+) -> np.ndarray:
     lab = rgb2lab(rgb_img)
     return slic(lab, n_segments=n_segments, compactness=compactness, start_label=0)
 
@@ -48,11 +50,15 @@ def parent_child_map(parent_seg: np.ndarray, child_seg: np.ndarray) -> Dict[int,
     for cid in np.unique(child_seg):
         mask = child_seg == cid
         parent_ids, counts = np.unique(parent_seg[mask], return_counts=True)
-        mapping[int(cid)] = int(parent_ids[np.argmax(counts)]) if len(parent_ids) else -1
+        mapping[int(cid)] = (
+            int(parent_ids[np.argmax(counts)]) if len(parent_ids) else -1
+        )
     return mapping
 
 
-def activation_per_region(heatmap: np.ndarray, masks: Dict[int, np.ndarray]) -> Dict[int, float]:
+def activation_per_region(
+    heatmap: np.ndarray, masks: Dict[int, np.ndarray]
+) -> Dict[int, float]:
     eps = 1e-9
     activations = {}
     for sid, mask in masks.items():

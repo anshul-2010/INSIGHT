@@ -64,7 +64,9 @@ class GradCAM:
         score.backward(retain_graph=retain_graph)
 
         if self.activations is None or self.gradients is None:
-            raise RuntimeError("GradCAM hooks failed. Ensure the target layer received activations.")
+            raise RuntimeError(
+                "GradCAM hooks failed. Ensure the target layer received activations."
+            )
 
         weights = self.gradients.mean(dim=(2, 3), keepdim=True)
         cam_tensor = (weights * self.activations).sum(dim=1, keepdim=True)
@@ -73,7 +75,9 @@ class GradCAM:
         cam -= cam.min()
         cam = cam / (cam.max() + 1e-9)
         if upsample_to is not None:
-            cam = cv2.resize(cam, (upsample_to[1], upsample_to[0]), interpolation=cv2.INTER_LINEAR)
+            cam = cv2.resize(
+                cam, (upsample_to[1], upsample_to[0]), interpolation=cv2.INTER_LINEAR
+            )
             cam = np.clip(cam, 0.0, 1.0)
         return cam
 
@@ -86,11 +90,15 @@ def auto_select_last_conv(model: nn.Module) -> nn.Module:
         if isinstance(module, nn.Conv2d):
             last_conv = module
     if last_conv is None:
-        raise ValueError("GradCAM target layer could not be inferred; pass it explicitly.")
+        raise ValueError(
+            "GradCAM target layer could not be inferred; pass it explicitly."
+        )
     return last_conv
 
 
-def overlay_heatmap(image: np.ndarray, cam: np.ndarray, alpha: float = 0.5) -> np.ndarray:
+def overlay_heatmap(
+    image: np.ndarray, cam: np.ndarray, alpha: float = 0.5
+) -> np.ndarray:
     """Utility for visualization: overlays the CAM on top of an RGB image."""
 
     heatmap = cv2.applyColorMap((cam * 255).astype(np.uint8), cv2.COLORMAP_JET)
